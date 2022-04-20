@@ -13,11 +13,14 @@ void main() async{
 
   await Firebase.initializeApp();//inicializa o firebase
 
-  await CustomFirebaseMessaging().inicialize();
-  await CustomFirebaseMessaging().getTokenFirebase(); /*geralmente não fica na main,
+  /*await CustomFirebaseMessaging().getTokenFirebase(); *//*geralmente não fica na main,
    é usado somente para recuperar o token em momentos como por exemplo para salvar
    algo em um banco de dados*/
   await CustomRemoteConfig().initialize();
+
+  await CustomFirebaseMessaging().inicialize(
+    callback: () => CustomRemoteConfig().forceFetch(),
+  );
 
   runApp(const MyApp());
 }
