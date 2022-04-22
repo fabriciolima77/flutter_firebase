@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_firebase/firebase_messaging/custom_firebase_messaging.dart';
@@ -7,22 +10,26 @@ import 'package:flutter_firebase/remote_config/custom_visible_rc_widget.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async{
-  WidgetsFlutterBinding.ensureInitialized();
-  /* antes de inicializar o app ele certifica que todas as plataformas(plataform channel)
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    /* antes de inicializar o app ele certifica que todas as plataformas(plataform channel)
    necessarias para o app iniciar foram carregadas */
 
-  await Firebase.initializeApp();//inicializa o firebase
+    await Firebase.initializeApp();//inicializa o firebase
 
-  /*await CustomFirebaseMessaging().getTokenFirebase(); *//*geralmente não fica na main,
+    /*await CustomFirebaseMessaging().getTokenFirebase(); *//*geralmente não fica na main,
    é usado somente para recuperar o token em momentos como por exemplo para salvar
    algo em um banco de dados*/
-  await CustomRemoteConfig().initialize();
+    await CustomRemoteConfig().initialize();
 
-  await CustomFirebaseMessaging().inicialize(
-    callback: () => CustomRemoteConfig().forceFetch(),
-  );
+    await CustomFirebaseMessaging().inicialize(
+      callback: () => CustomRemoteConfig().forceFetch(),
+    );
 
-  runApp(const MyApp());
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+
+    runApp(const MyApp());
+  },(error, stack) => FirebaseCrashlytics.instance.recordError(error, stack));
 }
 
 class MyApp extends StatelessWidget {
@@ -79,6 +86,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  
+   @override
+   void initState(){
+     super.initState();
+   }
+  
   bool _isLoading = false;
 
   void _incrementCounter() async {
@@ -105,6 +118,11 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            ElevatedButton(onPressed: () {
+              FirebaseCrashlytics.instance.log('Ocorreu uma exception manual');
+              //logica
+              throw Error;
+            }, child: const Text('Btn')),
             const Text(
               'You have pushed the button this many times:',
             ),
